@@ -84,6 +84,7 @@ def extract_company_info(text: str) -> Dict[str, any]:
         json_match = re.search(r'\{.*\}', result, re.DOTALL)
         if json_match:
             company_info = json.loads(json_match.group())
+            print(company_info)
             return company_info
         else:
             print("⚠️  Impossible d'extraire les informations au format JSON")
@@ -164,7 +165,7 @@ def collect_company_data(company_info: Dict) -> Dict[str, List]:
 
     official_query = f"{company_name} site officiel actualités 2025"
     collected_data["company_official"] = web_search_basic(official_query, 5)
-
+    print(collected_data["company_official"])
     SPINNER_RUNNING = False
     t1.join()
 
@@ -175,7 +176,7 @@ def collect_company_data(company_info: Dict) -> Dict[str, List]:
 
     linkedin_query = f"{company_name} linkedin company news updates"
     collected_data["company_linkedin"] = web_search_basic(linkedin_query, 5)
-
+    print(collected_data["company_linkedin"])
     SPINNER_RUNNING = False
     t2.join()
 
@@ -194,7 +195,7 @@ def collect_company_data(company_info: Dict) -> Dict[str, List]:
             news["search_type"] = "industry_news"
 
         collected_data["industry_news"].extend(domain_news)
-
+        print(collected_data["industry_news"])
         SPINNER_RUNNING = False
         t3.join()
 
@@ -227,7 +228,7 @@ def generate_enhanced_porter_analysis(original_text: str, company_info: Dict, we
     template = """
     Tu es un expert en stratégie d'entreprise et en intelligence économique.
 
-    Ta mission est de créer un **rapport enrichi d'au moins 10 000 caractères** selon le modèle des **5 forces de Porter**, pour l’entreprise suivante, en exploitant toutes les données fournies :
+    Ta mission est de créer un **rapport en francais enrichi d'au moins 10 000 caractères** selon le modèle des **5 forces de Porter**, pour l’entreprise suivante, en exploitant toutes les données fournies :
 
     ---
 
@@ -439,58 +440,3 @@ def create_enhanced_pdf_report(text: str, company_info: Dict, output_path: str):
 
 
 # === Main enrichi ===
-if __name__ == "__main__":
-    print("🚀 === ANALYSEUR PORTER ENRICHI ===")
-
-    # Vérification du fichier d'entrée
-    if not os.path.exists(INPUT_PDF_PATH):
-        print(f"❌ Fichier introuvable : {INPUT_PDF_PATH}")
-        print("💡 Placez votre document PDF dans le dossier 'pdfs/' avec le nom 'document.pdf'")
-        exit(1)
-
-    try:
-        # Étape 1 : Lecture du PDF
-        print("\n📥 Lecture du document PDF...")
-        original_text = read_pdf(INPUT_PDF_PATH)
-        print(f"✅ Document lu - {len(original_text)} caractères")
-
-        # Étape 2 : Extraction des informations entreprise
-        print("\n🔍 Extraction des informations entreprise...")
-        company_info = extract_company_info(original_text)
-
-        if company_info:
-            print(f"✅ Entreprise identifiée : {company_info.get('nom_entreprise', 'N/A')}")
-            print(f"✅ Domaines : {', '.join(company_info.get('domaines_activite', []))}")
-        else:
-            print("⚠️  Informations entreprise limitées, analyse basée sur le document uniquement")
-
-        # Étape 3 : Collecte des données web
-        print("\n🌐 Collecte des données web en cours...")
-        web_data = collect_company_data(company_info) if company_info else {}
-
-        if web_data and not web_data.get("error"):
-            total_sources = sum(len(v) for v in web_data.values() if isinstance(v, list))
-            print(f"✅ {total_sources} sources web collectées")
-        else:
-            print("⚠️  Données web limitées")
-
-        # Étape 4 : Génération de l'analyse enrichie
-        print("\n🧠 Génération de l'analyse Porter enrichie...")
-        enhanced_analysis = generate_enhanced_porter_analysis(original_text, company_info, web_data)
-        print("✅ Analyse générée")
-
-        # Étape 5 : Création du PDF final
-        print("\n📄 Création du rapport PDF enrichi...")
-        create_enhanced_pdf_report(enhanced_analysis, company_info, OUTPUT_PDF_PATH)
-        print(f"✅ Rapport disponible : {OUTPUT_PDF_PATH}")
-
-        # Résumé final
-        print(f"\n🎉 === ANALYSE TERMINÉE ===")
-        print(f"📊 Entreprise analysée : {company_info.get('nom_entreprise', 'Document PDF')}")
-        print(f"📁 Rapport enrichi : {OUTPUT_PDF_PATH}")
-        print(f"⏱️  Généré le : {datetime.now().strftime('%d/%m/%Y à %H:%M')}")
-
-    except Exception as e:
-        print(f"\n❌ Erreur lors du traitement : {e}")
-        print("💡 Vérifiez que le modèle Ollama est bien installé et actif")
-        exit(1)
